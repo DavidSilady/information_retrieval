@@ -6,17 +6,15 @@ import xml.etree.ElementTree as ElementTree
 def clean_sentences(sentences):
     for sentence_tuple in sentences:
         sentence = sentence_tuple[0]
-        # print(sentence)
-        remove_markdown_pattern = r'(\'\'\'?)'
-        sentence = re.sub(remove_markdown_pattern, '', sentence)
-        remove_link_pattern = r'(\[\[[^\]]*\|)|(\]\])|(\[\[)'
-        sentence = re.sub(remove_link_pattern, '', sentence)
-        print(sentence)
+        print(f'Origin: {sentence}')
+        sentence = re.sub(r'(\'\'\'?)|(^\s)|(<.+?>)|(</.+?>)', '', sentence)
+        sentence = re.sub(r'(\[\[[^]]*\|)|(]])|(\[\[)', '', sentence)
+        print(f'Clear: {sentence}')
 
 
 def parse_text_to_sentences(text):
-    print(text)
-    sentences = re.findall(r'(\S*[A-Z].+?(\(([^()])*\))?[.!?])(?=\s+\S*[A-Z]|$)', text)
+    text = re.sub(r'(<ref.+?/>)|(<ref.+?</ref>)|(<!--.+?-->)', '', text)
+    sentences = re.findall(r'((\s|^)\'*[A-Z].+?(\(([^()])*\))?[.!?])(?=\s+\S*[A-Z]|$)', text)
     # sentences = re.findall(r'(\S*[A-Z].+?[.!?])(?=\s+\S*[A-Z]|$)', text)
     # sentences = re.findall(r'(\S*[A-Z].+?(\(.+?\))?[.!?])(?=\s+\S*[A-Z]|$)', text)
     # sentences = re.findall(r'(?![a-z])*', text)
@@ -27,7 +25,7 @@ def parse_text_to_sentences(text):
 def parse_page(page_string):
     text = parse_text_from_xml(page_string)
     sentences = parse_text_to_sentences(text)
-    print(sentences)
+    # print(sentences)
 
 
 def parse_text_from_xml(xml_string):
@@ -37,11 +35,12 @@ def parse_text_from_xml(xml_string):
 
 
 def main():
-    # for i in range(100):
-    with open(f'./pages/00000099.xml', encoding='utf8') as file:
-        # print(f'Page: {i+1}')
-        file_string = file.read()
-        parse_page(file_string)
+    for i in range(100):
+        # with open(f'./pages/00000099.xml', encoding='utf8') as file:
+        with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
+            # print(f'Page: {i+1}')
+            file_string = file.read()
+            parse_page(file_string)
 
 
 if __name__ == '__main__':

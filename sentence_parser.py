@@ -2,16 +2,57 @@ import time
 import re
 import xml.etree.ElementTree as ElementTree
 import json
+import csv
+
+
+def extract_link_to_dict(sentence):
+    dict_results = []
+    results = re.findall(r'\[\[.+?\|.+?]]', sentence)
+    if results:
+        for result in results:
+            dict_result = {
+                'base': re.findall(r'\[\[(.+?)\|', result)[0],
+                'form': re.findall(r'\|(.+?)]]', result)[0],
+                'postfix': ''
+            }
+            dict_results.append(dict_result)
+    if not results:
+        results = re.findall(r'\[\[.+?]][a-z]+?\s', sentence)
+        if results:
+            for result in results:
+                dict_result = {
+                    'base': re.findall(r'\[\[(.+?)]]', result)[0],
+                    'postfix': re.findall(r'\[\[.+?]](.*)\s', result)[0]
+                }
+                dict_result['form'] = dict_result['base'] + dict_result['postfix']
+                dict_results.append(dict_result)
+    print(dict_results)
+    save_to_terms_dictionary(dict_results)
+    return dict_results
+
+
+def save_to_terms_dictionary(dict_terms):
+    csv_columns = ['base', 'form', 'postfix']
+    csv_file = "./term_dictionary.csv"
+    try:
+        with open(csv_file, 'a', encoding='utf8', newline='') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=csv_columns, lineterminator='\n')
+            # writer.writeheader()
+            for data in dict_terms:
+                writer.writerow(data)
+    except IOError:
+        print("I/O error")
 
 
 def clean_sentences(sentence_tuples):
     entries = []
     for sentence_tuple in sentence_tuples:
         original = sentence_tuple[0]
-        print(f'Origin: {original}')
+        # print(f'Origin: {original}')
         processed = re.sub(r'(\'\'\'?)|(^\s)|(<.+?>)|(</.+?>)', '', original)
+        extract_link_to_dict(processed)
         processed = re.sub(r'(\[\[[^]]*\|)|(]])|(\[\[)', '', processed)
-        print(f'Clear: {processed}')
+        # print(f'Clear: {processed}')
         entries.append({
             "original": original,
             "processed": processed,
@@ -44,12 +85,12 @@ def parse_text_from_xml(xml_string):
 def main():
     entries = []
 
-    for i in range(100):
-        # with open(f'./pages/00000099.xml', encoding='utf8') as file:
-        with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
-            # print(f'Page: {i+1}')
-            file_string = file.read()
-            entries += parse_page(file_string)
+    # for i in range(100):
+    with open(f'./pages/00000099.xml', encoding='utf8') as file:
+    # with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
+        # print(f'Page: {i+1}')
+        file_string = file.read()
+        entries += parse_page(file_string)
 
     with open('./result.json', 'w', encoding='utf8') as fp:
         json.dump(entries, fp)

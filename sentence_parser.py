@@ -5,9 +5,19 @@ import json
 import csv
 
 
+def is_dict_pair_valid(dict_pair):
+    # If the starting letter differs, the pair is not valid
+    if not dict_pair['base'][0] == dict_pair['form'][0]:
+        return False
+    # If the number of words differ, the pair is not valid
+    if not len(dict_pair['base'].split(' ')) == len(dict_pair['form'].split(' ')):
+        return False
+    return True
+
+
 def extract_link_to_dict(sentence):
     dict_results = []
-    results = re.findall(r'\[\[.+?\|.+?]]', sentence)
+    results = re.findall(r'\[\[[A-Za-z0-9.]+?\|.+?]]', sentence)
     if results:
         for result in results:
             dict_result = {
@@ -15,9 +25,10 @@ def extract_link_to_dict(sentence):
                 'form': re.findall(r'\|(.+?)]]', result)[0],
                 'postfix': ''
             }
-            dict_results.append(dict_result)
+            if is_dict_pair_valid(dict_result):
+                dict_results.append(dict_result)
     if not results:
-        results = re.findall(r'\[\[.+?]][a-z]+?\s', sentence)
+        results = re.findall(r'\[\[[A-Za-z0-9.]+?]][a-z]+?\s', sentence)
         if results:
             for result in results:
                 dict_result = {
@@ -26,7 +37,9 @@ def extract_link_to_dict(sentence):
                 }
                 dict_result['form'] = dict_result['base'] + dict_result['postfix']
                 dict_results.append(dict_result)
-    print(dict_results)
+
+    if results:
+        print(dict_results)
     save_to_terms_dictionary(dict_results)
     return dict_results
 
@@ -85,12 +98,12 @@ def parse_text_from_xml(xml_string):
 def main():
     entries = []
 
-    # for i in range(100):
-    with open(f'./pages/00000099.xml', encoding='utf8') as file:
-    # with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
-        # print(f'Page: {i+1}')
-        file_string = file.read()
-        entries += parse_page(file_string)
+    for i in range(100):
+        # with open(f'./pages/00000099.xml', encoding='utf8') as file:
+        with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
+            # print(f'Page: {i+1}')
+            file_string = file.read()
+            entries += parse_page(file_string)
 
     with open('./result.json', 'w', encoding='utf8') as fp:
         json.dump(entries, fp)

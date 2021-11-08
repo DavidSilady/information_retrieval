@@ -3,7 +3,8 @@ import re
 import xml.etree.ElementTree as ElementTree
 import json
 import csv
-
+import simplemma
+lang_data = simplemma.load_data('sk')
 
 def is_dict_pair_valid(dict_pair):
     # If the starting letter differs, the pair is not valid
@@ -15,7 +16,7 @@ def is_dict_pair_valid(dict_pair):
     return True
 
 
-def extract_link_to_dict(sentence):
+def extract_links_to_dict(sentence):
     dict_results = []
     results = re.findall(r'\[\[[A-Za-z0-9.]+?\|.+?]]', sentence)
     if results:
@@ -63,19 +64,38 @@ def clean_sentences(sentence_tuples):
         original = sentence_tuple[0]
         # print(f'Origin: {original}')
         processed = re.sub(r'(\'\'\'?)|(^\s)|(<.+?>)|(</.+?>)', '', original)
-        extract_link_to_dict(processed)
+        results = extract_links_to_dict(processed)
         processed = re.sub(r'(\[\[[^]]*\|)|(]])|(\[\[)', '', processed)
-        # print(f'Clear: {processed}')
+        print(f'Clear: {processed}')
+        lemmatized = lemmatize_sentence(processed, results)
+        print(f'Clear: {lemmatized}')
         entries.append({
             "original": original,
             "processed": processed,
+            "lemmatized": lemmatized
         })
+
     return entries
 
 
+def lemmatize_sentence(sentence, link_dict):
+
+    words = tokenize_sentence(sentence)
+    processed = ''
+    for word in words:
+        lemma = simplemma.lemmatize(word, lang_data)
+        processed += lemma + ' '
+    return processed
+
+
+def tokenize_sentence(sentence):
+    results = re.findall(r'[^\s!,.?":;]+', sentence)
+    return results
+
+
 def parse_text_to_sentences(text):
-    text = re.sub(r'(<ref.+?/>)|(<ref.+?</ref>)|(<!--.+?-->)', '', text)
-    sentences = re.findall(r'((\s|^)\'*[A-Z].+?(\(([^()])*\))?[.!?])(?=\s+\S*[A-Z]|$)', text)
+    text = re.sub(r'(<ref.+?/>)|(<ref.+?</ref>)|(<!--.+?-->)|(\s?[({].+?[)}])', '', text)
+    sentences = re.findall(r'((\s|^)\'*[A-Z].+?[.!?])(?=\s+\S*[A-Z]|$)', text)
     # sentences = re.findall(r'(\S*[A-Z].+?[.!?])(?=\s+\S*[A-Z]|$)', text)
     # sentences = re.findall(r'(\S*[A-Z].+?(\(.+?\))?[.!?])(?=\s+\S*[A-Z]|$)', text)
     # sentences = re.findall(r'(?![a-z])*', text)
@@ -98,12 +118,12 @@ def parse_text_from_xml(xml_string):
 def main():
     entries = []
 
-    for i in range(100):
-        # with open(f'./pages/00000099.xml', encoding='utf8') as file:
-        with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
-            # print(f'Page: {i+1}')
-            file_string = file.read()
-            entries += parse_page(file_string)
+    # for i in range(100):
+    with open(f'./pages/00000099.xml', encoding='utf8') as file:
+        # with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
+        # print(f'Page: {i+1}')
+        file_string = file.read()
+        entries += parse_page(file_string)
 
     with open('./result.json', 'w', encoding='utf8') as fp:
         json.dump(entries, fp)

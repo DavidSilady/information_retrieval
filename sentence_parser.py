@@ -68,7 +68,7 @@ def clean_sentences(sentence_tuples):
         processed = re.sub(r'(\[\[[^]]*\|)|(]])|(\[\[)', '', processed)
         print(f'Clear: {processed}')
         lemmatized = lemmatize_sentence(processed, results)
-        print(f'Clear: {lemmatized}')
+        print(f'Lemmatized: {lemmatized}')
         entries.append({
             "original": original,
             "processed": processed,
@@ -118,12 +118,12 @@ def parse_text_from_xml(xml_string):
 def main():
     entries = []
 
-    # for i in range(100):
-    with open(f'./pages/00000099.xml', encoding='utf8') as file:
-        # with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
-        # print(f'Page: {i+1}')
-        file_string = file.read()
-        entries += parse_page(file_string)
+    for i in range(100):
+        # with open(f'./pages/00000099.xml', encoding='utf8') as file:
+        with open(f'./pages/{(i+1):08d}.xml', encoding='utf8') as file:
+            # print(f'Page: {i+1}')
+            file_string = file.read()
+            entries += parse_page(file_string)
 
     with open('./result.json', 'w', encoding='utf8') as fp:
         json.dump(entries, fp)
